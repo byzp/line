@@ -1,0 +1,24 @@
+#the mod name as displayed in-game
+displayName: "line"
+
+#the internal name of your mod
+name: "line"
+
+#your name
+author: "byzp"
+
+#the fully qualified main class of the mod
+main: "main"
+
+#the mod description as seen in the mod dialog
+description: "联机mod，目前仅适用于安卓(arm64-v8a)"
+
+#the mod version
+version: 1.0
+
+#the minimum game build required to run this mod
+minGameVersion: 136
+
+#this is a java mod
+java: true
+hidden: true
