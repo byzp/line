@@ -26,7 +26,6 @@ import java.util.concurrent.atomic.*;
 import arc.assets.loaders.*;
 
 public class main extends Mod{
-    
     @Override
     public void init(){
         super.init();
@@ -66,7 +65,9 @@ public class main extends Mod{
         //System.load("/data/user/0/io.anuke.mindustry/libgojni.so");
         
         Events.run(HostEvent.class, ()->{
-            ass();
+            if(!Frpclib.isRunning("0")){
+                ass();
+            }
         });
         
     }
