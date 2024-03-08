@@ -12,6 +12,7 @@ public class c extends Thread{
  
    public void run(){
       while(true){
+        Thread tr=new Thread(()->{
          try{
             Socket server = serverSocket.accept();
             System.out.println(server.getRemoteSocketAddress());
@@ -34,6 +35,11 @@ public class c extends Thread{
             e.printStackTrace();
             //break;
          }
+        });
+        tr.start();
+        try{
+            Thread.sleep(1000);
+        }catch(Exception e){}
       }
    }
    private static final String NEWLINE = System.getProperty("line.separator");

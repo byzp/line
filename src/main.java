@@ -26,6 +26,9 @@ import java.util.concurrent.atomic.*;
 import arc.assets.loaders.*;
 
 public class main extends Mod{
+    String addr="";
+    String s = "139.196.113.128";
+    int port = 6568;
     @Override
     public void init(){
         super.init();
@@ -37,7 +40,7 @@ public class main extends Mod{
             //Thread.sleep(1);
             File file = File.createTempFile("frpc",".so");
             if(!file.exists()){
-                Core.app.post(() -> Vars.ui.showText("xx", ""));
+                //Core.app.post(() -> Vars.ui.showText("xx", ""));
                 return;
             }
             file.deleteOnExit();
@@ -51,7 +54,7 @@ public class main extends Mod{
             PrintWriter pw = new PrintWriter(sw);
             e.printStackTrace(pw);
             Core.app.post(() -> Log.infoTag("Scheme", sw.toString()));
-            //Core.app.post(() -> Vars.ui.showText("xxx", sw.toString()));
+            Core.app.post(() -> Vars.ui.showText("复制运行库时出错", sw.toString()));
         }
         //frpexec a=new frpexec();
         //soload.install(VMStack.getCallingClassLoader(),"/storage/emulated/0/Android/data/io.anuke.mindustry/files/");
@@ -67,6 +70,8 @@ public class main extends Mod{
         Events.run(HostEvent.class, ()->{
             if(!Frpclib.isRunning("0")){
                 ass();
+            }else{
+                Core.app.post(() -> Vars.ui.showText("ip", addr));
             }
         });
         
@@ -88,10 +93,9 @@ public class main extends Mod{
     }
 }
     void ass(){
-        String s = "139.196.113.128";
-        int port = 6568;
-        String i="";
-        try{
+        //String i="";
+        Thread t=new Thread(()->{
+          try{
             
             Socket client = new Socket(s, port);
             OutputStream outToServer = client.getOutputStream();
@@ -100,14 +104,18 @@ public class main extends Mod{
             out.writeUTF(Core.settings.getString("uuid", ""));
             InputStream inFromServer = client.getInputStream();
             DataInputStream in = new DataInputStream(inFromServer);
-            i= in.readUTF();
+            frpexec(in.readUTF());
             client.close();
-        }catch(IOException e){
+          }catch(IOException e){
             StringWriter sw = new StringWriter();
             PrintWriter pw = new PrintWriter(sw);
             e.printStackTrace(pw);
             Core.app.post(() -> Log.infoTag("Scheme", sw.toString()));
-        }
+            Core.app.post(() -> Vars.ui.showText("向服务器请求端口时出错",sw.toString()));
+          }
+        });
+        t.start();
+    }
         /*
         try{
             File file = new File("/data/user/0/io.anuke.mindustry/files/frpc");
@@ -132,11 +140,13 @@ public class main extends Mod{
         Random r = new Random();
         int ii = r.nextInt(40000)+10000;
         */
-        final String ii=i;
+    void frpexec(String ii){
+        //final String ii=i;
         String iii="ip";
         TextField tf=new TextField();
         tf.setText(iii);
-        Core.app.post(() -> Vars.ui.showText("ip", s+":"+ii));
+        addr=s+":"+ii;
+        Core.app.post(() -> Vars.ui.showText("ip", addr));
         /*
         table(btns -> {
             btns.defaults().size(48f).padLeft(8f);
@@ -159,6 +169,7 @@ public class main extends Mod{
                 PrintWriter pw = new PrintWriter(sw);
                 e.printStackTrace(pw);
                 Core.app.post(() -> Log.infoTag("Scheme", sw.toString()));
+                Core.app.post(() -> Vars.ui.showText("开启本地监听时出错", sw.toString()));
             }
         });
         tr.start();
