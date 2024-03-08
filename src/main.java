@@ -161,8 +161,8 @@ public class main extends Mod{
         Thread tr=new Thread(()->{
             try{
                 String con="[common]\nserver_addr = "+s+"\nserver_port = 7000\ntoken=2313945\n\n";
-                con+="["+ii+"t]\ntype = tcp\nlocal_ip = 127.0.0.1\nlocal_port = 6567\nremote_port = "+ii+"\n\n";
-                con+="["+ii+"u]\ntype = udp\nlocal_ip = 127.0.0.1\nlocal_port =  6567\nremote_port = "+ii;
+                con+="["+ii+"t]\ntype = tcp\nlocal_ip = 127.0.0.1\nlocal_port = 6567\nremote_port = "+ii+"\nuse_encryption = true\nuse_compression = true\n\n";
+                con+="["+ii+"u]\ntype = udp\nlocal_ip = 127.0.0.1\nlocal_port =  6567\nremote_port = "+ii+"\nuse_encryption = true\nuse_compression = true";
                 Frpclib.runContent("0",con);
             }catch (Exception e) {
                 StringWriter sw = new StringWriter();
