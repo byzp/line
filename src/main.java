@@ -1,7 +1,6 @@
-import arc.scene.ui.TextField;
 import arc.*;
 import arc.files.*;
-import arc.graphics.g2d.*;
+//import arc.graphics.g2d.*;
 import arc.math.geom.*;
 import arc.scene.*;
 import arc.scene.style.*;
@@ -39,10 +38,12 @@ public class main extends Mod{
             //Core.app.post(() -> Vars.ui.showText("xx", ""));
             //Thread.sleep(1);
             File file = File.createTempFile("frpc",".so");
+            /*
             if(!file.exists()){
                 //Core.app.post(() -> Vars.ui.showText("xx", ""));
                 return;
             }
+            */
             file.deleteOnExit();
             copyFileUsingStream(toFi.file(),file);
             file.setExecutable(true);
@@ -146,7 +147,8 @@ public class main extends Mod{
         TextField tf=new TextField();
         tf.setText(iii);
         addr=s+":"+ii;
-        Core.app.post(() -> Vars.ui.showText("ip", addr));
+        Core.app.post(() -> Vars.ui.showText("ip", addr+"\n(已复制)"));
+        Core.app.setClipboardText(addr);
         /*
         table(btns -> {
             btns.defaults().size(48f).padLeft(8f);
@@ -170,9 +172,9 @@ public class main extends Mod{
                 e.printStackTrace(pw);
                 Core.app.post(() -> Log.infoTag("Scheme", sw.toString()));
                 Core.app.post(() -> Vars.ui.showText("开启本地监听时出错", sw.toString()));
+                
             }
         });
         tr.start();
     }
-  
 }
