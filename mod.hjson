@@ -11,10 +11,10 @@ author: "byzp"
 main: "main"
 
 #the mod description as seen in the mod dialog
-description: "联机mod，目前仅适用于安卓(arm64-v8a)"
+description: "联机mod，目前仅支持Android aarch64和Windows x86_64"
 
 #the mod version
-version: 1.4
+version: 1.5
 
 #the minimum game build required to run this mod
 minGameVersion: 136
