@@ -29,7 +29,7 @@ public class main extends Mod{
     public void init(){
         super.init();
         if(System.getProperty("os.name").contains("Linux")){
-            if(System.getProperty("os.arch").contains("aarch64")&&(new File("/system/bin/dalvikvm")).exists()){
+            if(System.getProperty("os.arch").contains("aarch64")/*&&(new File("/system/bin/dalvikvm")).exists()*/){
                 // android sdk28以后不能在/data/data运行二进制，改为加载链接库
                 // 正常Linux也可以直接exec，加载动态链接库兼容安卓
                 load_android();
@@ -40,14 +40,14 @@ public class main extends Mod{
         }else{
             if(System.getProperty("os.name").contains("Windows")){
                 if(System.getProperty("os.arch").contains("amd64")){
-                    Events.run(HostEvent.class, ()->{
+                 //   Events.run(HostEvent.class, ()->{
                         if(stat==0){
                             ass(1);
                             stat=1;
                         }else{
                             Core.app.post(() -> Vars.ui.showText("ip", addr));
                         }
-                    });
+                 //   });
                 }else{
                     Core.app.post(() -> Vars.ui.showText("error", "此操作系统或架构不受支持，仅支持Android aarch64和Windows amd64"));
                     return;
@@ -76,13 +76,13 @@ public class main extends Mod{
             Core.app.post(() -> Vars.ui.showText("复制运行库时出错", sw.toString()));
         }
         
-        Events.run(HostEvent.class, ()->{
+       // Events.run(HostEvent.class, ()->{
             if(!Frpclib.isRunning("0")){
                 ass(0);
             }else{
                 Core.app.post(() -> Vars.ui.showText("ip", addr));
             }
-        });
+     //   });
     }
     
     void copyFileUsingStream(File source, File dest) throws IOException {
