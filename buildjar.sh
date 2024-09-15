@@ -6,5 +6,5 @@ unzip -n *.jar -d tmp &&
 mv *.dex tmp &&
 cd tmp &&
 zip -r aaa.zip * &&
-cp aaa.zip ../../../src/byzp &&
+cp aaa.zip ../../../src/java/byzp &&
 cd ../../..

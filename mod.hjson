@@ -1,9 +1,9 @@
-displayName: "line"
-name: "line"
-author: "byzp"
-main: byzp.main
-description: 联机mod，目前仅支持Android aarch64和Windows x86_64
-version: 1.6
+displayName: "line",
+name: "line",
+author: "byzp",
+main: byzp.main,
+description: "联机mod，支持自定义frpc，目前仅支持Android aarch64(项目正在重构，暂时不支持Windows amd64)"
+version: 2.0
 minGameVersion: 136
 java: true
 hidden: true
