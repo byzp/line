@@ -14,6 +14,7 @@ public class settings {
         ui.settings.addCategory("联机设置(line mod)", table -> {
             table.checkPref("启用", true);
             table.checkPref("启动时复制地址到剪切板",true);
+            table.checkPref("发送匿名统计数据",true);
            // table.checkPref("优先使用P2P(正在开发，目前无效)", false);
 
             table.areaTextPref("frpc.toml", randCfg.getCfg());
