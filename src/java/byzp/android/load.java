@@ -32,7 +32,7 @@ public class load {
                 Log.infoTag("Scheme", sw.toString());
             });
             Core.app.post(() -> {
-                Vars.ui.showText("复制运行库时出错", sw.toString());
+                Vars.ui.showText("@line.error.loadjni", sw.toString());
             });
         }
     }
@@ -99,7 +99,7 @@ public class load {
                     Log.infoTag("Scheme", sw.toString());
                 });
                 Core.app.post(() -> {
-                    Vars.ui.showText("开启本地监听时出错", sw.toString());
+                    Vars.ui.showText("@line.error.listen", sw.toString());
                 });
             }
         });

@@ -15,14 +15,14 @@ public class main extends Mod {
         if (System.getProperty("os.name").contains("Linux")) {
             if (System.getProperty("os.arch").contains("aarch64")) {
                 settings.init();
-                if (Core.settings.getBool("启用")){
+                if (Core.settings.getBool("@line.settings.on")){
                     load l = new load();
                     l.init_android();
                     return;
                 }
             }
         }else{
-            Core.app.post(() -> {Vars.ui.showText("error", "此操作系统或架构不受支持，仅支持Android aarch64(项目正在重构，Windows amd64暂时不支持)");});
+            Core.app.post(() -> {Vars.ui.showText("@line.error.error", "@line.unsupport");});
         }
     }
 }
