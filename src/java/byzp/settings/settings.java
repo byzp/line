@@ -11,14 +11,18 @@ import mindustry.Vars;
 public class settings {
 
     public static void set() {
-        ui.settings.addCategory("@line.settings.settings", table -> {
+        ui.settings.addCategory("@line.settings.settings", Icon.book, table -> {
             table.checkPref("@line.settings.on", true);
             table.checkPref("@line.settings.setClipboard",true);
            // table.checkPref("发送匿名统计数据",true);
-           // table.checkPref("优先使用P2P(正在开发，目前无效)", false);
+            table.checkPref("@line.settings.priorityP2P", true);
 
             table.areaTextPref("frpc.toml", randCfg.getCfg());
-            
+            if(Core.settings.getBool("@line.settings.priorityP2P")){
+                table.areaTextPref("frpcP2P.toml", randCfg.getCfgP2P());
+                table.areaTextPref("@line.settings.p2p.name", "test");
+                table.areaTextPref("@line.settings.p2p.token", "123456");
+            }
         });
         
     }

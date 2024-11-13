@@ -10,4 +10,4 @@ mkdir tmp  &&
 cd tmp  &&
 unzip ../frp/cmd/frp/libfrp.aar  &&
 mkdir ../libs  &&
-mv jni/arm64-v8a/* ../libs  &&
+mv jni/arm64-v8a/* ../lib  &&
