@@ -1,6 +1,6 @@
 package byzp.settings;
 
-//import mindustry.gen.Icon;
+import mindustry.gen.Icon;
 import arc.Core;
 import static arc.Core.*;
 import static mindustry.Vars.*;

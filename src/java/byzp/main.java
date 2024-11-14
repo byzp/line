@@ -3,6 +3,7 @@ package byzp;
 import arc.Core;
 import byzp.android.load;
 import byzp.settings.settings;
+import byzp.ui.*;
 import mindustry.Vars;
 import mindustry.mod.Mod;
 
@@ -18,8 +19,10 @@ public class main extends Mod {
                 if (Core.settings.getBool("@line.settings.on")){
                     load l = new load();
                     l.init_android();
+                    fastJoin fj=new fastJoin();
                     return;
                 }
+                
             }
         }else{
             Core.app.post(() -> {Vars.ui.showText("@line.error.error", "@line.unsupport");});

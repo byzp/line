@@ -19,11 +19,10 @@ import mindustry.Vars;
 
 
 public class load {
-    public void init_android() {
+    static {
         try {
             String pth = load_file("libgojni.so");
             Seq.iii(pth);
-            frpc();
         } catch (IOException e) {
             StringWriter sw = new StringWriter();
             PrintWriter pw = new PrintWriter(sw);
@@ -36,8 +35,16 @@ public class load {
             });
         }
     }
+    
+    public void init_android() {
+        frpc(Core.settings.getString("frpc.toml"));
+    }
+    
+    public void init_android_p2p() {
+        
+    }
 
-    public String load_file(String name) throws IOException {
+    static String load_file(String name) throws IOException {
         try {
             Fi fi = Vars.mods.getMod(main.class).root.child(name);
             Fi toFi = Vars.tmpDirectory.child(fi.name());
@@ -57,7 +64,7 @@ public class load {
         }
     }
 
-    void copyFileUsingStream(File source, File dest) throws IOException {
+    static void copyFileUsingStream(File source, File dest) throws IOException {
         InputStream is = null;
         OutputStream os = null;
         try {
@@ -81,13 +88,13 @@ public class load {
         }
     }
 
-    void frpc() {
+    void frpc(String common) {
         Thread tr = new Thread(() -> {
             try {
                 File cfg = File.createTempFile("frpc", ".toml");
                 FileOutputStream fop = new FileOutputStream(cfg);
                 OutputStreamWriter writer = new OutputStreamWriter(fop, "UTF-8");
-                writer.append(Core.settings.getString("frpc.toml"));
+                writer.append(common);
                 writer.close();
                 fop.close();
                 Frp.runFrpc("",cfg.getPath());
