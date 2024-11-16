@@ -1,7 +1,7 @@
 package byzp.ui;
 
 import mindustry.gen.Icon;
-import mindustry.ui.dialogs.BaseDialog;
+import mindustry.ui.dialogs.*;
 import mindustry.net.Packets.*;
 
 import arc.*;
@@ -25,7 +25,7 @@ import mindustry.io.versions.*;
 import mindustry.net.*;
 import mindustry.net.Packets.*;
 import mindustry.ui.*;
-
+import arc.struct.Seq;
 
 import static mindustry.Vars.*;
 
@@ -34,7 +34,7 @@ public class fastJoin extends BaseDialog {
     public String Link = "";
     public String output="";
     public boolean valid;
-
+    
     public fastJoin(){
         super("@line.fastJoin");
         /*
@@ -45,12 +45,13 @@ public class fastJoin extends BaseDialog {
         
         //cont.label(() -> "ip:port / name:token:[ip]").width(550f).left();
         */
-        TextField field = cont.field(Core.settings.getString("ip"), text -> {
+        TextField field = cont.field(Core.settings.getString("p2p.addr"), text -> {
             Core.settings.put("p2p.addr", text);
         }).size(320f, 54f).maxTextLength(100).get();
         
-        
+        //field.cont.label(() -> output).width(550f).left();
         buttons.defaults().size(140f, 60f).pad(4f);
+        
         buttons.button("@cancel", this::hide);
         buttons.button("@ok", () -> {
             try {
@@ -95,8 +96,15 @@ public class fastJoin extends BaseDialog {
         var root = (Table) stack.getChildren().get(1);
         //var root=ui.join.cont;
         root.button("@line.fastJoin", Icon.play, this::show);
+        int num = root.getCells().size;
+        //int fr=(int)((8-num)/2);
+        root.getCells().insert(num-2, root.getCells().remove(num-1));
         
     }
+    
+    
+    
+    
     
     public boolean setLink(String link) {
         //if (Link.equals(link)) return false;
@@ -112,6 +120,9 @@ public class fastJoin extends BaseDialog {
         Link = link;
         return valid;
     }
-
+    
+    
+    
+    
 
 }

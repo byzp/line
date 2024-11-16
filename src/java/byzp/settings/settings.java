@@ -1,5 +1,6 @@
 package byzp.settings;
 
+import java.util.*;
 import mindustry.gen.Icon;
 import arc.Core;
 import static arc.Core.*;
@@ -19,9 +20,15 @@ public class settings {
 
             table.areaTextPref("frpc.toml", randCfg.getCfg());
             if(Core.settings.getBool("@line.settings.priorityP2P")){
+                if(Core.settings.getString("@line.settings.p2p.name")==null /* || Core.settings.getString("@line.settings.p2p.secretKey")==null */){
+                    Random r = new Random();
+                    int randKey = r.nextInt(100000) + 100000;
+                    Core.settings.put("@line.settings.p2p.name", "p2p"+randKey);
+                    //Core.settings.put("@line.settings.p2p.secretKey", "p2p"+randKey);
+                }
                 table.areaTextPref("frpcP2P.toml", randCfg.getCfgP2P());
-                table.areaTextPref("@line.settings.p2p.name", "test");
-                table.areaTextPref("@line.settings.p2p.token", "123456");
+                table.areaTextPref("@line.settings.p2p.name", Core.settings.getString("@line.settings.p2p.name"));
+                table.areaTextPref("@line.settings.p2p.secretKey", Core.settings.getString("@line.settings.p2p.secretKey"));
             }
         });
         
