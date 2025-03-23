@@ -1,33 +1,18 @@
 package byzp.ui;
 
+import arc.Core;
+import arc.func.Cons;
+import arc.scene.ui.TextField;
+import arc.scene.ui.layout.Cell;
+import arc.scene.ui.layout.Stack;
+import arc.scene.ui.layout.Table;
+import arc.util.Time;
+import mindustry.Vars;
 import mindustry.gen.Icon;
-import mindustry.ui.dialogs.*;
-import mindustry.net.Packets.*;
-
-import arc.*;
-import arc.freetype.FreeTypeFontGenerator.*;
-import arc.graphics.*;
-import arc.input.*;
-import arc.math.*;
-import arc.scene.ui.*;
-import arc.scene.ui.TextButton.*;
-import arc.scene.ui.layout.*;
-import arc.struct.*;
-import arc.util.*;
-import arc.util.Timer.*;
-import arc.util.serialization.*;
-import mindustry.*;
-import mindustry.core.*;
-import mindustry.game.EventType.*;
-import mindustry.gen.*;
-import mindustry.graphics.*;
-import mindustry.io.versions.*;
-import mindustry.net.*;
-import mindustry.net.Packets.*;
-import mindustry.ui.*;
-import arc.struct.Seq;
-
+import mindustry.ui.dialogs.BaseDialog;
 import static mindustry.Vars.*;
+
+import byzp.android.*;
 
 public class fastJoin extends BaseDialog {
     
@@ -59,29 +44,38 @@ public class fastJoin extends BaseDialog {
                     ui.showInfo("@noname");
                     return;
                 }
+                String addr=Core.settings.getString("p2p.addr").split("/")[0];
+                String ip="127.0.0.1";
+                int port=6567;
+                String[] addrs=addr.split("*");
+                if(addrs.length==2){
+                    
+                    
+                }else{
+                    String[] address=addr.split(":");
+                    ip=address[0];
+                    if (address.length>1){
+                        port=Integer.parseInt(address[1]);
+                    }
+                    
+                }
+                String finalip=ip;
+                int finalport=port;
                 
                 ui.loadfrag.show("@connecting");
                 ui.loadfrag.setButton(() -> {
                     ui.loadfrag.hide();
                     netClient.disconnectQuietly();
                 });
-                String[] addr=Core.settings.getString("p2p.addr").split(":");
-                String ip=addr[0];
-                int port=6567;
-                
-                if (addr.length>1){
-                    port=Integer.parseInt(addr[1]);
-                }
-                int finalport=port;
                 
                 Time.runTask(2f, () -> {
                     logic.reset();
                     net.reset();
                     Vars.netClient.beginConnecting();
-                    net.connect(ip, finalport, () -> {
+                    net.connect(finalip, finalport, () -> {
                         if(net.client()){
                             hide();
-                            //add.hide();
+                            //adyd.hide();
                         }
                     });
                 });
@@ -91,6 +85,8 @@ public class fastJoin extends BaseDialog {
                 ui.showErrorMessage(ignored.getMessage());
             }
         }); //.disabled(button -> Link.isEmpty() || net.active());
+        
+        
         
         var stack = (Stack) ui.join.getChildren().get(1);
         var root = (Table) stack.getChildren().get(1);

@@ -62,20 +62,28 @@ task jarAndroid{
     dependsOn "jar"
 
     doLast{
-        if(!sdkRoot || !new File(sdkRoot).exists()) throw new GradleException("No valid Android SDK found. Ensure that ANDROID_HOME is set to your Android SDK directory.");
+        //if(!sdkRoot || !new File(sdkRoot).exists()) throw new GradleException("No valid Android SDK found. Ensure that ANDROID_HOME is set to your Android SDK directory.");
 
-        def platformRoot = new File("$sdkRoot/platforms/").listFiles().sort().reverse().find{ f -> new File(f, "android.jar").exists()}
+        //def platformRoot = new File("$sdkRoot/platforms/").listFiles().sort().reverse().find{ f -> new File(f, "android.jar").exists()}
 
-        if(!platformRoot) throw new GradleException("No android.jar found. Ensure that you have an Android platform installed.")
+        //if(!platformRoot) throw new GradleException("No android.jar found. Ensure that you have an Android platform installed.")
 
         //collect dependencies needed for desugaring
-        def dependencies = (configurations.compileClasspath.asList() + configurations.runtimeClasspath.asList() + [new File(platformRoot, "android.jar")]).collect{ "--classpath $it.path" }.join(" ")
+        //def dependencies = (configurations.compileClasspath.asList() + configurations.runtimeClasspath.asList() + [new File(platformRoot, "android.jar")]).collect{ "--classpath $it.path" }.join(" ")
 
         def d8 = isWindows ? "d8.bat" : "d8"
 
         //dex and desugar files - this requires d8 in your PATH
-        "$d8 $dependencies --min-api 14 --output ${project.archivesBaseName}Android.jar ${project.archivesBaseName}Desktop.jar"
-            .execute(null, new File("$buildDir/build/lib/*")).waitForProcessOutput(System.out, System.err)
+        exec {
+          ExecSpec execSpec ->
+            executable "$d8"
+            args '--min-api', "28"
+            args '--output', "$buildDir/libs/${project.archivesBaseName}Android.jar"
+            args "$buildDir/libs/${project.archivesBaseName}Desktop.jar"
+            standardOutput = out
+        }
+        //"$d8 $dependencies --min-api 28 --output ${project.archivesBaseName}Android.jar ${project.archivesBaseName}Desktop.jar"
+        //    .execute(null, new File("$buildDir/libs/*")).waitForProcessOutput(System.out, System.err)
     }
 }
 
@@ -96,6 +104,7 @@ jar{
 }
 
 task deploy(type: Jar){
+    if(!file("lib/libgojni.so").exists()) throw new GradleException("Cannot find Shared Object; run buildjni.sh to build it.")
     dependsOn jarAndroid
     dependsOn jar
     archiveFileName = "${base.archivesBaseName}.jar"

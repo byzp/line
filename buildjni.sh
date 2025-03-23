@@ -1,5 +1,6 @@
 git submodule init  &&
 git submodule update  &&
+rm -rf tmp lib
 #go install golang.org/x/mobile/cmd/gomobile@latest  &&
 #export PATH=~/go/bin  &&
 cd frp/cmd/frp  &&
@@ -9,5 +10,5 @@ cd ../../..  &&
 mkdir tmp  &&
 cd tmp  &&
 unzip ../frp/cmd/frp/libfrp.aar  &&
-mkdir ../libs  &&
+mkdir ../lib &&
 mv jni/arm64-v8a/* ../lib  &&

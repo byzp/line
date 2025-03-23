@@ -1,13 +1,14 @@
 package byzp.settings;
 
-import java.util.*;
-import mindustry.gen.Icon;
 import arc.Core;
-import static arc.Core.*;
-import static mindustry.Vars.*;
-import byzp.settings.randCfg;
-import java.util.regex.*;
+import arc.func.Cons;
+import java.util.Random;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import mindustry.Vars;
+import mindustry.gen.Icon;
+import mindustry.ui.dialogs.SettingsMenuDialog;
+import static mindustry.Vars.*;
 
 public class settings {
 
@@ -47,7 +48,7 @@ public class settings {
             Matcher port = Pattern.compile("remotePort = (\\d+)").matcher(cfg);
             if (ip.find()&&port.find()) {
                 String pth=ip.group(1)+":"+port.group(1);
-                Core.app.post(() -> {Vars.ui.showText("@line.settings.address", pth/*+"\n"+"@line.settings.clipboardTip" */);});
+                Core.app.post(() -> {Vars.ui.showText("@line.settings.address", "@line.settings.clipboardTip");});
                 Core.app.setClipboardText(pth);
             }else{
                 Core.settings.put("@line.settings.setClipboard", false);

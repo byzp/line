@@ -1,9 +1,7 @@
 package byzp.settings;
 
-import java.util.*;
 import arc.Core;
-import mindustry.Vars;
-
+import java.util.Random;
 
 public class randCfg{
 

@@ -38,6 +38,8 @@ public class load {
     
     public void init_android() {
         frpc(Core.settings.getString("frpc.toml"));
+        frpc(Core.settings.getString("frpcP2P.toml"));
+        frps("bindPort = 7003\nauth.token=\"byzp\"");
     }
     
     public void init_android_p2p() {
@@ -98,6 +100,31 @@ public class load {
                 writer.close();
                 fop.close();
                 Frp.runFrpc("",cfg.getPath());
+            } catch (Exception e) {
+                StringWriter sw = new StringWriter();
+                PrintWriter pw = new PrintWriter(sw);
+                e.printStackTrace(pw);
+                Core.app.post(() -> {
+                    Log.infoTag("Scheme", sw.toString());
+                });
+                Core.app.post(() -> {
+                    Vars.ui.showText("@line.error.listen", sw.toString());
+                });
+            }
+        });
+        tr.start();
+    }
+    
+    public static void frps(String common) {
+        Thread tr = new Thread(() -> {
+            try {
+                File cfg = File.createTempFile("frps", ".toml");
+                FileOutputStream fop = new FileOutputStream(cfg);
+                OutputStreamWriter writer = new OutputStreamWriter(fop, "UTF-8");
+                writer.append(common);
+                writer.close();
+                fop.close();
+                Frp.runFrps(cfg.getPath(),false);
             } catch (Exception e) {
                 StringWriter sw = new StringWriter();
                 PrintWriter pw = new PrintWriter(sw);
