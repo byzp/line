@@ -98,13 +98,14 @@ jar{
         include "mod.hjson"
     }
 
-    from("lib/"){
+    from("libs/arm64-v8a"){
         include "**"
     }
+    
 }
 
 task deploy(type: Jar){
-    if(!file("lib/libgojni.so").exists()) throw new GradleException("Cannot find Shared Object; run buildjni.sh to build it.")
+    if(!file("libs/arm64-v8a/libgojni.so").exists()) throw new GradleException("Cannot find Shared Object; run buildjni.sh to build it.")
     dependsOn jarAndroid
     dependsOn jar
     archiveFileName = "${base.archivesBaseName}.jar"

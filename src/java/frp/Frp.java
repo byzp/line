@@ -20,7 +20,7 @@ public abstract class Frp {
 	
 	private static native void _init();
 	
-	private static final class proxyLogListener implements Seq.Proxy, LogListener {
+	private static final class proxyFrpLogListener implements Seq.Proxy, FrpLogListener {
 		private final int refnum;
 		
 		@Override public final int incRefnum() {
@@ -28,7 +28,7 @@ public abstract class Frp {
 		      return refnum;
 		}
 		
-		proxyLogListener(int refnum) { this.refnum = refnum; Seq.trackGoRef(refnum, this); }
+		proxyFrpLogListener(int refnum) { this.refnum = refnum; Seq.trackGoRef(refnum, this); }
 		
 		public native void log(String log);
 	}
@@ -36,7 +36,7 @@ public abstract class Frp {
 	
 	public static native void runFrpc(String cfgDir, String cfgFile);
 	public static native void runFrps(String cfgFile, boolean strictConfigMode);
-	public static native void setFrpLogListener(LogListener l);
+	public static native void setFrpLogListener(FrpLogListener l);
 	public static native void stopFrpc();
 	public static native void stopFrps();
 	public static native String version();

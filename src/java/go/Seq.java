@@ -5,6 +5,7 @@
 package go;
 
 //import android.content.Context;
+
 import java.lang.ref.PhantomReference;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
@@ -21,7 +22,6 @@ import go.Universe;
 // Seq is a sequence of machine-dependent encoded values.
 // Used by automatically generated language bindings to talk to Go.
 public class Seq {
-    //public static String pth;
 	private static Logger log = Logger.getLogger("GoSeq");
 
 	// also known to bind/seq/ref.go and bind/objc/seq_darwin.m
@@ -33,7 +33,7 @@ public class Seq {
 	// The singleton GoRefQueue
 	private static final GoRefQueue goRefQueue = new GoRefQueue();
 
-    public static void iii(String pth){
+	public static void iii(String pth){
 		//System.loadLibrary("gojni");
 		System.load(pth);
 		init();
@@ -44,8 +44,8 @@ public class Seq {
 	/*
 	public static void setContext(Context context) {
 		setContext((java.lang.Object)context);
-	}*/
-
+	}
+*/
 	private static native void init();
 
 	// Empty method to run class initializer

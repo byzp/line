@@ -19,10 +19,19 @@ import mindustry.Vars;
 
 
 public class load {
+    public static native int sstart();
+    public static native int cstart();
     static {
         try {
-            String pth = load_file("libgojni.so");
+            String pth=load_file("libgojni.so");
             Seq.iii(pth);
+            System.load(load_file("libovertcp.so"));
+            if(Core.settings.getBool("@line.settings.priorityP2P")){
+                new Thread(()->{
+                    sstart();
+                }).start();
+            }
+            //cstart("192.168.10.122");
         } catch (IOException e) {
             StringWriter sw = new StringWriter();
             PrintWriter pw = new PrintWriter(sw);
@@ -39,7 +48,7 @@ public class load {
     public void init_android() {
         frpc(Core.settings.getString("frpc.toml"));
         frpc(Core.settings.getString("frpcP2P.toml"));
-        frps("bindPort = 7003\nauth.token=\"byzp\"");
+        //frps("bindPort = 7003\nauth.token=\"byzp\"");
     }
     
     public void init_android_p2p() {
@@ -49,11 +58,16 @@ public class load {
     static String load_file(String name) throws IOException {
         try {
             Fi fi = Vars.mods.getMod(main.class).root.child(name);
-            Fi toFi = Vars.tmpDirectory.child(fi.name());
-            fi.copyTo(toFi);
+            //Fi toFi = Vars.tmpDirectory.child(fi.name());
+            //fi.copyTo(toFi);
             File file = File.createTempFile(name, ".so");
+            
+            FileOutputStream fileOutputStream = new FileOutputStream(file);
+            byte[] bytes = fi.readBytes(); 
+            fileOutputStream.write(bytes); 
+            
             file.deleteOnExit();
-            copyFileUsingStream(toFi.file(), file);
+            //copyFileUsingStream(fi.file(), file);
             return file.getPath();
         } catch (IOException e) {
             StringWriter sw = new StringWriter();
@@ -65,7 +79,7 @@ public class load {
             return "";
         }
     }
-
+    /*
     static void copyFileUsingStream(File source, File dest) throws IOException {
         InputStream is = null;
         OutputStream os = null;
@@ -89,8 +103,8 @@ public class load {
             throw th;
         }
     }
-
-    void frpc(String common) {
+    */
+    public static void frpc(String common) {
         Thread tr = new Thread(() -> {
             try {
                 File cfg = File.createTempFile("frpc", ".toml");

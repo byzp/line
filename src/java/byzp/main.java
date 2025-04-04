@@ -19,7 +19,7 @@ public class main extends Mod {
                 if (Core.settings.getBool("@line.settings.on")){
                     load l = new load();
                     l.init_android();
-                    fastJoin fj=new fastJoin();
+                    linkp2p lp=new linkp2p();
                     return;
                 }
                 

@@ -12,16 +12,19 @@ import mindustry.gen.Icon;
 import mindustry.ui.dialogs.BaseDialog;
 import static mindustry.Vars.*;
 
-import byzp.android.*;
+import java.util.Random;
 
-public class fastJoin extends BaseDialog {
+import byzp.android.*;
+import byzp.settings.*;
+
+public class linkp2p extends BaseDialog {
     
     public String Link = "";
     public String output="";
     public boolean valid;
     
-    public fastJoin(){
-        super("@line.fastJoin");
+    public linkp2p(){
+        super("@line.linkp2p");
         /*
         cont.table(table -> {
             table.add("@line.settings.address").padLeft(5f).left();
@@ -44,23 +47,30 @@ public class fastJoin extends BaseDialog {
                     ui.showInfo("@noname");
                     return;
                 }
-                String addr=Core.settings.getString("p2p.addr").split("/")[0];
-                String ip="127.0.0.1";
-                int port=6567;
-                String[] addrs=addr.split("*");
-                if(addrs.length==2){
-                    
-                    
+                Random r = new Random();
+                int rand = r.nextInt(100000) + 100000;
+                String cfg= randCfg.getCfgP2P().split("\n\n")[0]+
+                "\n\n[[visitors]]\ntype = \"xtcp\"\nname = \""+rand+"\""+"\"\nbindAddr = \"127.0.0.1\"\nbindPort = 8004\n";
+                String[] addr=Core.settings.getString("p2p.addr").split("#");
+                String name=addr[0];
+                if(addr.length==1){
+                    cfg+="serverName = "+name;
+                    cfg+="\nsecretKey = null";
+                }
+                if(addr.length==2){
+                    String key=addr[1];
+                    cfg+="serverName = "+name;
+                    cfg+="\nsecretKey = "+key;
                 }else{
-                    String[] address=addr.split(":");
-                    ip=address[0];
-                    if (address.length>1){
-                        port=Integer.parseInt(address[1]);
-                    }
                     
                 }
-                String finalip=ip;
-                int finalport=port;
+                //Vars.ui.showText("a", cfg);
+                
+                load.frpc(cfg);
+                
+                new Thread(()->{
+                    load.cstart();
+                }).start();
                 
                 ui.loadfrag.show("@connecting");
                 ui.loadfrag.setButton(() -> {
@@ -72,7 +82,7 @@ public class fastJoin extends BaseDialog {
                     logic.reset();
                     net.reset();
                     Vars.netClient.beginConnecting();
-                    net.connect(finalip, finalport, () -> {
+                    net.connect("127.0.0.1", 8004, () -> {
                         if(net.client()){
                             hide();
                             //adyd.hide();
@@ -86,21 +96,15 @@ public class fastJoin extends BaseDialog {
             }
         }); //.disabled(button -> Link.isEmpty() || net.active());
         
-        
-        
         var stack = (Stack) ui.join.getChildren().get(1);
         var root = (Table) stack.getChildren().get(1);
         //var root=ui.join.cont;
-        root.button("@line.fastJoin", Icon.play, this::show);
+        root.button("@line.linkp2p", Icon.play, this::show);
         int num = root.getCells().size;
         //int fr=(int)((8-num)/2);
         root.getCells().insert(num-2, root.getCells().remove(num-1));
         
     }
-    
-    
-    
-    
     
     public boolean setLink(String link) {
         //if (Link.equals(link)) return false;
