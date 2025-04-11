@@ -42,10 +42,10 @@ dependencies{
 
     //def appcompat_version = "1.3.0"
 
-   // implementation "androidx.appcompat:appcompat:$appcompat_version"
-    // For loading and tinting drawables on older versions of the platform
-  //  implementation "androidx.appcompat:appcompat-resources:$appcompat_version"
-
+    //implementation "androidx.appcompat:appcompat:$appcompat_version"
+    //For loading and tinting drawables on older versions of the platform
+    //implementation "androidx.appcompat:appcompat-resources:$appcompat_version"
+    
     annotationProcessor "com.github.Anuken:jabel:$jabelVersion"
 }
 

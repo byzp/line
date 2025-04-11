@@ -18,8 +18,6 @@
 #include <errno.h>
 #include <jni.h>
 
-//#define DEBUG  //////////
-
 #pragma pack(push, 1)
 struct FrameHeader {
     uint32_t conn_id;
@@ -41,7 +39,7 @@ static int setNonBlocking(int fd) {
     return fcntl(fd, F_SETFL, flags | O_NONBLOCK);
 }
 
-static void tcp_send_frame(int sock, uint32_t conn_id, uint8_t flag, const char *data, uint32_t len) {
+static int tcp_send_frame(int sock, uint32_t conn_id, uint8_t flag, const char *data, uint32_t len) {
     FrameHeader header;
     header.conn_id = conn_id;
     header.flag = flag;
@@ -50,7 +48,11 @@ static void tcp_send_frame(int sock, uint32_t conn_id, uint8_t flag, const char 
     memcpy(buf.data(), &header, sizeof(FrameHeader));
     if(len > 0 && data)
         memcpy(buf.data() + sizeof(FrameHeader), data, len);
-    send(sock, buf.data(), buf.size(), 0);
+    int n = send(sock, buf.data(), buf.size(), 0);
+    if(n < 0) {
+        perror("send frame");
+    }
+    return n;
 }
 
 struct TcpConn {
@@ -75,7 +77,11 @@ extern "C"
 JNIEXPORT int JNICALL
 Java_byzp_android_load_sstart(JNIEnv* env, jobject) {
     int listen_fd = socket(AF_INET, SOCK_STREAM, 0);
-    if(listen_fd < 0) { perror("socket"); exit(1); }
+    while(listen_fd < 0) {
+        perror("socket listen_fd");
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        listen_fd = socket(AF_INET, SOCK_STREAM, 0);
+    }
     int opt = 1;
     setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
     struct sockaddr_in servAddr;
@@ -83,8 +89,14 @@ Java_byzp_android_load_sstart(JNIEnv* env, jobject) {
     servAddr.sin_family = AF_INET;
     servAddr.sin_port = htons(8002);
     servAddr.sin_addr.s_addr = INADDR_ANY;
-    if(bind(listen_fd, (struct sockaddr*)&servAddr, sizeof(servAddr)) < 0) { perror("bind"); exit(1); }
-    listen(listen_fd, 10);
+    while(bind(listen_fd, (struct sockaddr*)&servAddr, sizeof(servAddr)) < 0) {
+        perror("bind listen_fd");
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+    if(listen(listen_fd, 10) < 0) {
+        perror("listen");
+        exit(1);
+    }
     setNonBlocking(listen_fd);
     //printf("server started, listening on TCP 8002\n");
 
@@ -119,7 +131,11 @@ Java_byzp_android_load_sstart(JNIEnv* env, jobject) {
         tv.tv_sec = 0;
         tv.tv_usec = 10000;
         int ret = select(maxfd+1, &readfds, NULL, NULL, &tv);
-        if(ret < 0) { perror("select"); continue; }
+        if(ret < 0) {
+            perror("select");
+            continue;
+        }
+        // 接受新的客户端连接
         if(FD_ISSET(listen_fd, &readfds)) {
             struct sockaddr_in cliAddr;
             socklen_t addrlen = sizeof(cliAddr);
@@ -132,9 +148,9 @@ Java_byzp_android_load_sstart(JNIEnv* env, jobject) {
                     std::lock_guard<std::mutex> lock(sessionMutex);
                     sessions[client_fd] = session;
                 }
-                #ifdef DEBUG
-                    printf("New client session, fd=%d\n", client_fd);
-                #endif
+                printf("New client session, fd=%d\n", client_fd);
+            } else {
+                perror("accept new client");
             }
         }
         {
@@ -146,6 +162,9 @@ Java_byzp_android_load_sstart(JNIEnv* env, jobject) {
                     char buf[2048];
                     int n = read(session->client_fd, buf, sizeof(buf));
                     if(n <= 0) {
+                        if(n < 0 && errno != EAGAIN) {
+                            perror("read client_fd");
+                        }
                         close(session->client_fd);
                         toRemove.push_back(session->client_fd);
                         continue;
@@ -162,46 +181,51 @@ Java_byzp_android_load_sstart(JNIEnv* env, jobject) {
                             if(s >= 0) {
                                 setNonBlocking(s);
                                 if(connect(s, (struct sockaddr*)&targetAddr, sizeof(targetAddr)) < 0 && errno != EINPROGRESS) {
+                                    perror("connect target TCP");
                                     close(s);
                                 } else {
                                     session->tcpConns[header.conn_id] = {s};
-                                    #ifdef DEBUG
-                                        printf("Established TCP mapping, conn_id=%u for client fd=%d\n", header.conn_id, session->client_fd);
-                                    #endif
+                                    printf("Established TCP mapping, conn_id=%u for client fd=%d\n", header.conn_id, session->client_fd);
                                 }
+                            } else {
+                                perror("socket for TCP_NEW");
                             }
                         } else if(header.flag == UDP_NEW) {
                             int s = socket(AF_INET, SOCK_DGRAM, 0);
                             if(s >= 0) {
                                 setNonBlocking(s);
-                                connect(s, (struct sockaddr*)&targetAddr, sizeof(targetAddr));
-                                session->udpConns[header.conn_id] = {s};
-                                #ifdef DEBUG
+                                if(connect(s, (struct sockaddr*)&targetAddr, sizeof(targetAddr)) < 0) {
+                                    perror("connect target UDP");
+                                    close(s);
+                                } else {
+                                    session->udpConns[header.conn_id] = {s};
                                     printf("Established UDP mapping, conn_id=%u for client fd=%d\n", header.conn_id, session->client_fd);
-                                #endif
+                                }
+                            } else {
+                                perror("socket for UDP_NEW");
                             }
                         } else if(header.flag == TCP_DATA) {
                             if(session->tcpConns.count(header.conn_id)) {
-                                write(session->tcpConns[header.conn_id].fd, payload, header.length);
+                                if(write(session->tcpConns[header.conn_id].fd, payload, header.length) < 0) {
+                                    perror("write TCP_DATA");
+                                }
                             }
                         } else if(header.flag == UDP_DATA) {
                             if(session->udpConns.count(header.conn_id)) {
-                                write(session->udpConns[header.conn_id].udp_fd, payload, header.length);
+                                if(write(session->udpConns[header.conn_id].udp_fd, payload, header.length) < 0) {
+                                    perror("write UDP_DATA");
+                                }
                             }
                         } else if(header.flag == CLOSE) {
                             if(session->tcpConns.count(header.conn_id)) {
                                 close(session->tcpConns[header.conn_id].fd);
                                 session->tcpConns.erase(header.conn_id);
-                                #ifdef DEBUG
-                                    printf("Closed TCP mapping, conn_id=%u for client fd=%d\n", header.conn_id, session->client_fd);
-                                #endif
+                                printf("Closed TCP mapping, conn_id=%u for client fd=%d\n", header.conn_id, session->client_fd);
                             }
                             if(session->udpConns.count(header.conn_id)) {
                                 close(session->udpConns[header.conn_id].udp_fd);
                                 session->udpConns.erase(header.conn_id);
-                                #ifdef DEBUG
-                                    printf("Closed UDP mapping, conn_id=%u for client fd=%d\n", header.conn_id, session->client_fd);
-                                #endif
+                                printf("Closed UDP mapping, conn_id=%u for client fd=%d\n", header.conn_id, session->client_fd);
                             }
                         }
                         offset += frameSize;

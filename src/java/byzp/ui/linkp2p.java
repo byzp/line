@@ -1,5 +1,7 @@
 package byzp.ui;
 
+import java.util.Random;
+
 import arc.Core;
 import arc.func.Cons;
 import arc.scene.ui.TextField;
@@ -7,15 +9,14 @@ import arc.scene.ui.layout.Cell;
 import arc.scene.ui.layout.Stack;
 import arc.scene.ui.layout.Table;
 import arc.util.Time;
+
 import mindustry.Vars;
 import mindustry.gen.Icon;
 import mindustry.ui.dialogs.BaseDialog;
 import static mindustry.Vars.*;
 
-import java.util.Random;
-
-import byzp.android.*;
-import byzp.settings.*;
+import byzp.android.load;
+import byzp.settings.randCfg;
 
 public class linkp2p extends BaseDialog {
     

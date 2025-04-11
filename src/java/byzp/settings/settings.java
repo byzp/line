@@ -1,26 +1,27 @@
 package byzp.settings;
 
-import arc.Core;
-import arc.func.Cons;
 import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import arc.Core;
+import arc.func.Cons;
+
 import mindustry.Vars;
 import mindustry.gen.Icon;
-import mindustry.ui.dialogs.SettingsMenuDialog;
-import static mindustry.Vars.*;
 
 public class settings {
 
     public static void set() {
-        ui.settings.addCategory("@line.settings.settings", Icon.book, table -> {
+        Vars.ui.settings.addCategory("@line.settings.settings", Icon.book, table -> {
             table.checkPref("@line.settings.on", true);
             table.checkPref("@line.settings.setClipboard",true);
            // table.checkPref("发送匿名统计数据",true);
-            table.checkPref("@line.settings.priorityP2P", true);
+            table.checkPref("@line.settings.enableP2P", false);
 
             table.areaTextPref("frpc.toml", randCfg.getCfg());
-            if(Core.settings.getBool("@line.settings.priorityP2P")){
+            if(Core.settings.getBool("@line.settings.enableP2P")){
+                table.checkPref("@line.settings.priorityP2P", false);
                 if(Core.settings.getString("@line.settings.p2p.name")==null /* || Core.settings.getString("@line.settings.p2p.secretKey")==null */){
                     Random r = new Random();
                     int randKey = r.nextInt(100000) + 100000;
@@ -37,7 +38,6 @@ public class settings {
     
     public static void init() {
         set();
-        
         String cfg = Core.settings.getString("frpc.toml");
         if ((cfg.charAt(cfg.length() - 1))!='\n'){
             Core.settings.put("frpc.toml", cfg + "\n");

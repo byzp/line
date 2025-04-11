@@ -17,8 +17,6 @@
 #include <errno.h>
 #include <jni.h>
 
-//#define DEBUG  //////////
-
 #pragma pack(push, 1)
 struct FrameHeader {
     uint32_t conn_id;
@@ -40,7 +38,7 @@ static int setNonBlocking(int fd) {
     return fcntl(fd, F_SETFL, flags | O_NONBLOCK);
 }
 
-static void tcp_send_frame(int sock, uint32_t conn_id, uint8_t flag, const char *data, uint32_t len) {
+static int tcp_send_frame(int sock, uint32_t conn_id, uint8_t flag, const char *data, uint32_t len) {
     FrameHeader header;
     header.conn_id = conn_id;
     header.flag = flag;
@@ -49,7 +47,11 @@ static void tcp_send_frame(int sock, uint32_t conn_id, uint8_t flag, const char 
     memcpy(buf.data(), &header, sizeof(FrameHeader));
     if(len > 0 && data)
         memcpy(buf.data() + sizeof(FrameHeader), data, len);
-    send(sock, buf.data(), buf.size(), 0);
+    int n = send(sock, buf.data(), buf.size(), 0);
+    if(n < 0) {
+        perror("send frame");
+    }
+    return n;
 }
 
 struct TcpConn {
@@ -66,28 +68,60 @@ std::map<uint32_t, UdpConn> udpConns;
 std::map<std::string, uint32_t> udpPeerMap;
 uint32_t g_conn_id = 1;
 
+// 重连函数，尝试重连 server，并返回新的 server socket
+static int reconnect_server(const char* server_ip, uint16_t port) {
+    int server_fd;
+    while(true) {
+        server_fd = socket(AF_INET, SOCK_STREAM, 0);
+        if(server_fd < 0) {
+            perror("socket (reconnect)");
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+            continue;
+        }
+        struct sockaddr_in servAddr;
+        memset(&servAddr, 0, sizeof(servAddr));
+        servAddr.sin_family = AF_INET;
+        servAddr.sin_port = htons(port);
+        servAddr.sin_addr.s_addr = inet_addr(server_ip);
+        if(connect(server_fd, (struct sockaddr*)&servAddr, sizeof(servAddr)) < 0) {
+            perror("connect (reconnect)");
+            close(server_fd);
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+            continue;
+        }
+        setNonBlocking(server_fd);
+        printf("Reconnected to server %s:%d\n", server_ip, port);
+        break;
+    }
+    return server_fd;
+}
+
 extern "C"
 JNIEXPORT int JNICALL
 Java_byzp_android_load_cstart(JNIEnv* env, jobject /* this */) {
+    const char* server_ip = "127.0.0.1";
+    uint16_t server_port = 8002;
     int server_fd = socket(AF_INET, SOCK_STREAM, 0);
-    if(server_fd < 0){
+    while(server_fd < 0) {
         perror("socket");
-        exit(1);
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        server_fd = socket(AF_INET, SOCK_STREAM, 0);
     }
     struct sockaddr_in servAddr;
     memset(&servAddr, 0, sizeof(servAddr));
     servAddr.sin_family = AF_INET;
-    servAddr.sin_port = htons(8002);
-    servAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
-    if(connect(server_fd, (struct sockaddr*)&servAddr, sizeof(servAddr)) < 0){
+    servAddr.sin_port = htons(server_port);
+    servAddr.sin_addr.s_addr = inet_addr(server_ip);
+    while(connect(server_fd, (struct sockaddr*)&servAddr, sizeof(servAddr)) < 0) {
         perror("connect");
-        exit(1);
+        close(server_fd);
+        server_fd = reconnect_server(server_ip, server_port);
     }
     setNonBlocking(server_fd);
 
     int tcp_listen_fd = socket(AF_INET, SOCK_STREAM, 0);
     if(tcp_listen_fd < 0){
-        perror("socket");
+        perror("socket tcp_listen_fd");
         exit(1);
     }
     int opt = 1;
@@ -98,15 +132,18 @@ Java_byzp_android_load_cstart(JNIEnv* env, jobject /* this */) {
     localAddr.sin_port = htons(8004);
     localAddr.sin_addr.s_addr = INADDR_ANY;
     if(bind(tcp_listen_fd, (struct sockaddr*)&localAddr, sizeof(localAddr)) < 0){
-        perror("bind");
+        perror("bind tcp_listen_fd");
         exit(1);
     }
-    listen(tcp_listen_fd, 10);
+    if(listen(tcp_listen_fd, 10) < 0) {
+        perror("listen tcp_listen_fd");
+        exit(1);
+    }
     setNonBlocking(tcp_listen_fd);
 
     int local_udp_fd = socket(AF_INET, SOCK_DGRAM, 0);
     if(local_udp_fd < 0){
-        perror("socket");
+        perror("socket local_udp_fd");
         exit(1);
     }
     if(bind(local_udp_fd, (struct sockaddr*)&localAddr, sizeof(localAddr)) < 0){
@@ -145,6 +182,7 @@ Java_byzp_android_load_cstart(JNIEnv* env, jobject /* this */) {
             perror("select");
             continue;
         }
+        // 处理新的 TCP 连接
         if(FD_ISSET(tcp_listen_fd, &readfds)) {
             struct sockaddr_in cliAddr;
             socklen_t addrlen = sizeof(cliAddr);
@@ -157,11 +195,12 @@ Java_byzp_android_load_cstart(JNIEnv* env, jobject /* this */) {
                     tcpConns[conn_id] = {client_fd};
                 }
                 tcp_send_frame(server_fd, conn_id, TCP_NEW, nullptr, 0);
-                #ifdef DEBUG
-                    printf("New TCP connection, conn_id=%u\n", conn_id);
-                #endif
+                printf("New TCP connection, conn_id=%u\n", conn_id);
+            } else {
+                perror("accept");
             }
         }
+        // 处理 UDP 数据报
         if(FD_ISSET(local_udp_fd, &readfds)) {
             char buf[1500];
             struct sockaddr_in peer;
@@ -169,9 +208,7 @@ Java_byzp_android_load_cstart(JNIEnv* env, jobject /* this */) {
             int n = recvfrom(local_udp_fd, buf, sizeof(buf), 0, (struct sockaddr*)&peer, &len);
             if(n > 0) {
                 char key[64];
-                #ifdef DEBUG
-                    snprintf(key, sizeof(key), "%s:%d", inet_ntoa(peer.sin_addr), ntohs(peer.sin_port));
-                #endif
+                snprintf(key, sizeof(key), "%s:%d", inet_ntoa(peer.sin_addr), ntohs(peer.sin_port));
                 uint32_t conn_id;
                 {
                     std::lock_guard<std::mutex> lock(connMutex);
@@ -181,19 +218,18 @@ Java_byzp_android_load_cstart(JNIEnv* env, jobject /* this */) {
                         udpPeerMap[key] = conn_id;
                         udpConns[conn_id] = {peer};
                         tcp_send_frame(server_fd, conn_id, UDP_NEW, nullptr, 0);
-                        #ifdef DEBUG
-                            printf("New UDP mapping from %s, assigned conn_id=%u\n", key, conn_id);
-                        #endif
+                        printf("New UDP mapping from %s, assigned conn_id=%u\n", key, conn_id);
                     } else {
                         conn_id = it->second;
                     }
                 }
                 tcp_send_frame(server_fd, conn_id, UDP_DATA, buf, n);
-                #ifdef DEBUG
-                    printf("UDP datagram from %s, using conn_id=%u\n", key, conn_id);
-                #endif
+                printf("UDP datagram from %s, using conn_id=%u\n", key, conn_id);
+            } else if(n < 0 && errno != EAGAIN) {
+                perror("recvfrom");
             }
         }
+        // 处理 TCP 客户端数据
         {
             std::lock_guard<std::mutex> lock(connMutex);
             std::vector<uint32_t> toRemove;
@@ -209,9 +245,7 @@ Java_byzp_android_load_cstart(JNIEnv* env, jobject /* this */) {
                         tcp_send_frame(server_fd, cid, CLOSE, nullptr, 0);
                         close(fd);
                         toRemove.push_back(cid);
-                        #ifdef DEBUG
-                            printf("TCP connection closed, conn_id=%u\n", cid);
-                        #endif
+                        printf("TCP connection closed, conn_id=%u\n", cid);
                     }
                 }
             }
@@ -219,6 +253,7 @@ Java_byzp_android_load_cstart(JNIEnv* env, jobject /* this */) {
                 tcpConns.erase(cid);
             }
         }
+        // 处理来自服务端的数据
         if(FD_ISSET(server_fd, &readfds)) {
             char buf[2048];
             int n = read(server_fd, buf, sizeof(buf));
@@ -233,32 +268,40 @@ Java_byzp_android_load_cstart(JNIEnv* env, jobject /* this */) {
                     if(header.flag == TCP_DATA) {
                         std::lock_guard<std::mutex> lock(connMutex);
                         if(tcpConns.count(header.conn_id)) {
-                            write(tcpConns[header.conn_id].fd, payload, header.length);
+                            if(write(tcpConns[header.conn_id].fd, payload, header.length) < 0) {
+                                perror("write TCP_DATA");
+                            }
                         }
                     } else if(header.flag == UDP_DATA) {
                         std::lock_guard<std::mutex> lock(connMutex);
                         if(udpConns.count(header.conn_id)) {
-                            sendto(local_udp_fd, payload, header.length, 0, (struct sockaddr*)&udpConns[header.conn_id].peer, sizeof(udpConns[header.conn_id].peer));
-                            #ifdef DEBUG
+                            if(sendto(local_udp_fd, payload, header.length, 0, (struct sockaddr*)&udpConns[header.conn_id].peer, sizeof(udpConns[header.conn_id].peer)) < 0) {
+                                perror("sendto UDP_DATA");
+                            } else {
                                 printf("Forwarded UDP data to peer, conn_id=%u\n", header.conn_id);
-                            #endif
+                            }
                         } else {
-                            #ifdef DEBUG
-                                printf("No UDP mapping for conn_id=%u\n", header.conn_id);
-                            #endif
+                            printf("No UDP mapping for conn_id=%u\n", header.conn_id);
                         }
                     } else if(header.flag == CLOSE) {
                         std::lock_guard<std::mutex> lock(connMutex);
                         if(tcpConns.count(header.conn_id)) {
                             close(tcpConns[header.conn_id].fd);
                             tcpConns.erase(header.conn_id);
-                            #ifdef DEBUG
-                                printf("Received CLOSE for TCP conn_id=%u\n", header.conn_id);
-                            #endif
+                            printf("Received CLOSE for TCP conn_id=%u\n", header.conn_id);
                         }
                     }
                     serverRecvBuf.erase(serverRecvBuf.begin(), serverRecvBuf.begin() + frameSize);
                 }
+            } else if(n == 0) { // 服务器关闭连接，尝试重连
+                printf("Server connection closed, attempting to reconnect...\n");
+                close(server_fd);
+                server_fd = reconnect_server(server_ip, server_port);
+            } else if(n < 0 && errno != EAGAIN) {
+                perror("read server_fd");
+                // 出现严重错误时重连
+                close(server_fd);
+                server_fd = reconnect_server(server_ip, server_port);
             }
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(5));

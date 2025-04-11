@@ -1,22 +1,22 @@
 package byzp.android;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+
 import arc.Core;
 import arc.files.Fi;
 import arc.util.Log;
-import byzp.main;
-import frp.Frp;
-import go.Seq;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.io.OutputStreamWriter;
+
 import mindustry.Vars;
 
+import frp.Frp;
+import go.Seq;
+
+import byzp.line;
 
 public class load {
     public static native int sstart();
@@ -57,17 +57,17 @@ public class load {
 
     static String load_file(String name) throws IOException {
         try {
-            Fi fi = Vars.mods.getMod(main.class).root.child(name);
-            //Fi toFi = Vars.tmpDirectory.child(fi.name());
-            //fi.copyTo(toFi);
+            Fi fi = Vars.mods.getMod(line.class).root.child(name);
+    
             File file = File.createTempFile(name, ".so");
-            
-            FileOutputStream fileOutputStream = new FileOutputStream(file);
-            byte[] bytes = fi.readBytes(); 
-            fileOutputStream.write(bytes); 
-            
             file.deleteOnExit();
-            //copyFileUsingStream(fi.file(), file);
+
+            try (FileOutputStream fileOutputStream = new FileOutputStream(file)) {
+                byte[] bytes = fi.readBytes();
+                fileOutputStream.write(bytes);
+            }
+            // file.setWritable(false, false);
+
             return file.getPath();
         } catch (IOException e) {
             StringWriter sw = new StringWriter();
@@ -79,6 +79,7 @@ public class load {
             return "";
         }
     }
+
     /*
     static void copyFileUsingStream(File source, File dest) throws IOException {
         InputStream is = null;
