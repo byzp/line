@@ -36,7 +36,9 @@ public class line extends Plugin {
         if (Core.settings.getBool("@line.settings.on")) {
             load l = new load();
             l.init_android();
-            linkp2p lp = new linkp2p();
+            if(Core.settings.getBool("@line.settings.enableP2P")){
+                linkp2p lp = new linkp2p();
+            }
         }
     }
 }
